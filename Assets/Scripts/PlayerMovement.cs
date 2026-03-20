@@ -435,9 +435,10 @@ public class PlayerMovement : MonoBehaviour
 
         float targetEmission = 0f;
         
-        if (isGrounded && currentSpeed >= minSpeedToShowLines && Input.GetAxisRaw("Vertical") > 0)
+        // FIX: Removed 'isGrounded' and input checks. 
+        // Now it only cares about your actual speed, so lines stay during jumps and air-strafing!
+        if (currentSpeed >= minSpeedToShowLines)
         {
-            // FIX: Prevent Division by Zero by ensuring the denominator is at least 0.1
             float speedRange = Mathf.Max(0.1f, runSpeed - minSpeedToShowLines);
             float speedFactor = (currentSpeed - minSpeedToShowLines) / speedRange;
             
