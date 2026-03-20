@@ -31,7 +31,13 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float forwardRayLength = 1f;
     [SerializeField] float downwardRayHeight = 1.5f;
     [SerializeField] float ledgeVaultBoost = 1.5f;
-
+    
+    [Header("Game Feel - Particle Speed Lines")]
+    [SerializeField] ParticleSystem speedLinesParticle;
+    [SerializeField] float minSpeedToShowLines = 14f; 
+    [SerializeField] float maxParticleEmission = 100f; 
+    [SerializeField] float fadeSpeed = 5f;
+    
     [Header("Game Feel - FOV & Shake")]
     [SerializeField] Camera playerCamera;
     [SerializeField] float normalFOV = 60f;
@@ -84,6 +90,7 @@ public class PlayerMovement : MonoBehaviour
     float headBobTimer;
     float currentTilt;
     float currentDipY;
+    float currentParticleEmission = 0f;
 
     void Start()
     {
@@ -96,6 +103,13 @@ public class PlayerMovement : MonoBehaviour
         Cursor.visible = false;
         
         if(playerCamera != null) playerCamera.fieldOfView = normalFOV;
+        
+        if (speedLinesParticle != null)
+        {
+            var emission = speedLinesParticle.emission;
+            emission.rateOverTime = 0f;
+            speedLinesParticle.Play();
+        }
     }
 
     void Update()
@@ -115,6 +129,8 @@ public class PlayerMovement : MonoBehaviour
         HandleDash();
         HandleGameFeel();
         ApplyGravity();
+        HandleSpeedLines();
+        
     }
 
     void HandleGroundCheck()
@@ -406,5 +422,52 @@ public class PlayerMovement : MonoBehaviour
             velocity.y += gravity * Time.deltaTime;
         }
         controller.Move(velocity * Time.deltaTime);
+    }
+    
+    void HandleSpeedLines()
+    {
+        if (speedLinesParticle == null) return;
+        
+        if (!speedLinesParticle.isPlaying)
+        {
+            speedLinesParticle.Play();
+        }
+
+        float targetEmission = 0f;
+        
+        if (isGrounded && currentSpeed >= minSpeedToShowLines && Input.GetAxisRaw("Vertical") > 0)
+        {
+            // FIX: Prevent Division by Zero by ensuring the denominator is at least 0.1
+            float speedRange = Mathf.Max(0.1f, runSpeed - minSpeedToShowLines);
+            float speedFactor = (currentSpeed - minSpeedToShowLines) / speedRange;
+            
+            targetEmission = Mathf.Lerp(0f, maxParticleEmission, speedFactor);
+        }
+        else if (isDashing) 
+        {
+            targetEmission = maxParticleEmission * 1.5f; 
+        }
+        
+        currentParticleEmission = Mathf.Lerp(currentParticleEmission, targetEmission, fadeSpeed * Time.deltaTime);
+        
+        var emission = speedLinesParticle.emission;
+        emission.rateOverTime = currentParticleEmission;
+    }
+    
+    public float GetCurrentSpeed() 
+    {
+        return currentSpeed;
+    }
+
+    public string GetMovementState()
+    {
+        if (isDashing) return "DASHING";
+        if (isClimbing) return "VAULTING";
+        if (isSliding) return "SLIDING";
+        if (!isGrounded) return "IN AIR";
+        if (Input.GetKey(KeyCode.LeftControl)) return "CROUCHING";
+        if (currentSpeed > walkSpeed + 0.5f) return "RUNNING";
+        if (currentSpeed > 0.5f) return "WALKING";
+        return "IDLE";
     }
 }
