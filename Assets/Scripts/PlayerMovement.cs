@@ -32,7 +32,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float downwardRayHeight = 1.5f;
     [SerializeField] float ledgeVaultBoost = 1.5f;
 
-    [Header("Game Feel")]
+    [Header("Game Feel - FOV & Shake")]
     [SerializeField] Camera playerCamera;
     [SerializeField] float normalFOV = 60f;
     [SerializeField] float runFOV = 80f;
@@ -40,6 +40,20 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float fovTransitionSpeed = 10f;
     [SerializeField] float landShakeDuration = 0.15f;
     [SerializeField] float landShakeMagnitude = 0.2f;
+
+    [Header("Game Feel - Camera Tilt")]
+    [SerializeField] float maxTiltAngle = 4f;
+    [SerializeField] float tiltTransitionSpeed = 8f;
+
+    [Header("Game Feel - Head Bob & Impact")]
+    [SerializeField] float idleBobSpeed = 2f;     
+    [SerializeField] float idleBobAmount = 0.02f; 
+    [SerializeField] float walkBobSpeed = 12f;
+    [SerializeField] float walkBobAmount = 0.05f;
+    [SerializeField] float runBobSpeed = 18f;
+    [SerializeField] float runBobAmount = 0.1f;
+    [SerializeField] float jumpDipAmount = 0.15f;
+    [SerializeField] float landDipAmount = 0.25f;
 
     [Header("Camera & Input")]
     [SerializeField] float mouseSensitivity = 100f;
@@ -63,7 +77,13 @@ public class PlayerMovement : MonoBehaviour
     float xRotation = 0f;
     float originalHeight;
     float nextDashTime;
+    
+    // Camera Effect Variables
     Vector3 cameraBaseLocalPos;
+    Vector3 currentShakeOffset;
+    float headBobTimer;
+    float currentTilt;
+    float currentDipY;
 
     void Start()
     {
@@ -102,15 +122,24 @@ public class PlayerMovement : MonoBehaviour
         wasGrounded = isGrounded;
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
+        // Check impacts FIRST, before we reset the downward velocity!
+        if (isGrounded && !wasGrounded)
+        {
+            if (velocity.y < -5f) 
+            {
+                currentDipY = -landDipAmount; // Trigger Land Dip
+            }
+            if (velocity.y < -7f)
+            {
+                StartCoroutine(CameraShakeRoutine(landShakeDuration, landShakeMagnitude));
+            }
+        }
+
+        // safely reset the Y velocity to stick to the ground
         if (isGrounded && velocity.y < 0)
         {
             velocity.y = -2f;
             jumpsRemaining = maxJumps; 
-        }
-
-        if (isGrounded && !wasGrounded && velocity.y < -10f)
-        {
-            StartCoroutine(CameraShake(landShakeDuration, landShakeMagnitude));
         }
     }
 
@@ -122,7 +151,8 @@ public class PlayerMovement : MonoBehaviour
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
-        playerCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+        // Apply X rotation (Mouse Y) and Z rotation (Tilt)
+        playerCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, currentTilt);
         transform.Rotate(Vector3.up * mouseX);
     }
 
@@ -149,8 +179,6 @@ public class PlayerMovement : MonoBehaviour
                 if (inputDir.magnitude > 0.1f)
                 {
                     targetSpeed = Input.GetKey(KeyCode.LeftShift) ? runSpeed : walkSpeed;
-                    
-                    // Only apply crouch slowness if NOT sliding
                     if (Input.GetKey(KeyCode.LeftControl)) targetSpeed = crouchSpeed;
                     
                     moveDirection = inputDir;
@@ -161,7 +189,6 @@ public class PlayerMovement : MonoBehaviour
             }
             else
             {
-                // Air Movement: Retain speed, do not slow down when crouching
                 if (inputDir.magnitude > 0.1f)
                 {
                     moveDirection = Vector3.Lerp(moveDirection, inputDir, 5f * Time.deltaTime).normalized;
@@ -174,19 +201,14 @@ public class PlayerMovement : MonoBehaviour
 
     void HandleCrouchAndSlide()
     {
-        // 1. Handle Height Scaling (Works both Mid-air and Grounded)
         float targetHeight = Input.GetKey(KeyCode.LeftControl) ? originalHeight * crouchScaleY : originalHeight;
         controller.height = Mathf.Lerp(controller.height, targetHeight, crouchTransitionSpeed * Time.deltaTime);
 
-        // 2. Continuous Slide Check (Triggers exactly when landing if holding Ctrl)
         if (Input.GetKey(KeyCode.LeftControl) && isGrounded && !isSliding)
         {
-            // If moving fast enough (lower threshold so it's more forgiving)
             if (currentSpeed > walkSpeed + 0.5f) 
             {
                 isSliding = true;
-                
-                // Boost to slide speed, but keep momentum if already going faster (e.g. from dash)
                 currentSpeed = Mathf.Max(currentSpeed, slideSpeed); 
 
                 float x = Input.GetAxisRaw("Horizontal");
@@ -197,7 +219,6 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        // Cancel slide when key released
         if (Input.GetKeyUp(KeyCode.LeftControl))
         {
             isSliding = false;
@@ -249,6 +270,8 @@ public class PlayerMovement : MonoBehaviour
                 velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
                 jumpsRemaining--;
                 isSliding = false; 
+                
+                currentDipY = -jumpDipAmount; // Trigger Jump Dip
             }
         }
         else if (Input.GetButton("Jump"))
@@ -303,33 +326,75 @@ public class PlayerMovement : MonoBehaviour
         velocity.y = Mathf.Sqrt(ledgeVaultBoost * -2f * gravity);
         currentSpeed = runSpeed; 
         moveDirection = transform.forward;
+        currentDipY = -jumpDipAmount; // Dip effect after vaulting
     }
 
     void HandleGameFeel()
     {
         if (playerCamera == null) return;
 
+        // 1. FOV Adjustment
         float targetFOV = normalFOV;
-        
         if (isDashing) targetFOV = dashFOV;
         else if (isSliding) targetFOV = runFOV + 5f;
         else if (currentSpeed > walkSpeed + 1f && Input.GetAxis("Vertical") > 0) targetFOV = runFOV;
-
         playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, fovTransitionSpeed * Time.deltaTime);
+
+        // 2. Camera Tilt (Strafe)
+        float targetTilt = 0f;
+        if (moveDirection.magnitude > 0.1f && !isClimbing)
+        {
+            float xInput = Input.GetAxisRaw("Horizontal");
+            targetTilt = -xInput * maxTiltAngle;
+        }
+        currentTilt = Mathf.Lerp(currentTilt, targetTilt, tiltTransitionSpeed * Time.deltaTime);
+        
+        // 3. Head Bobbing & Breathing (Idle)
+        float bobOffset = 0f;
+        
+        if (isGrounded && !isSliding && !isDashing)
+        {
+            if (currentSpeed > 0.5f)
+            {
+                // Moving Bob
+                float speedMult = (Input.GetKey(KeyCode.LeftShift)) ? runBobSpeed : walkBobSpeed;
+                float amountMult = (Input.GetKey(KeyCode.LeftShift)) ? runBobAmount : walkBobAmount;
+                headBobTimer += Time.deltaTime * speedMult;
+                bobOffset = Mathf.Sin(headBobTimer) * amountMult;
+            }
+            else
+            {
+                // Idle Bob (Breathing)
+                headBobTimer += Time.deltaTime * idleBobSpeed;
+                bobOffset = Mathf.Sin(headBobTimer) * idleBobAmount;
+            }
+        }
+        else 
+        { 
+            // Reset mid-air or during slide
+            headBobTimer = 0f; 
+        }
+
+        // 4. Impact Dip Recovery (Lerp back to 0)
+        currentDipY = Mathf.Lerp(currentDipY, 0f, Time.deltaTime * 10f);
+
+        Vector3 smoothTargetPos = cameraBaseLocalPos + new Vector3(0, bobOffset + currentDipY, 0);
+        playerCamera.transform.localPosition = Vector3.Lerp(playerCamera.transform.localPosition, smoothTargetPos, Time.deltaTime * 15f);
+        playerCamera.transform.localPosition += currentShakeOffset;
     }
 
-    IEnumerator CameraShake(float duration, float magnitude)
+    IEnumerator CameraShakeRoutine(float duration, float magnitude)
     {
         float elapsed = 0.0f;
         while (elapsed < duration)
         {
             float x = Random.Range(-1f, 1f) * magnitude;
             float y = Random.Range(-1f, 1f) * magnitude;
-            playerCamera.transform.localPosition = cameraBaseLocalPos + new Vector3(x, y, 0f);
+            currentShakeOffset = new Vector3(x, y, 0f);
             elapsed += Time.deltaTime;
             yield return null;
         }
-        playerCamera.transform.localPosition = cameraBaseLocalPos;
+        currentShakeOffset = Vector3.zero;
     }
 
     void ApplyGravity()
