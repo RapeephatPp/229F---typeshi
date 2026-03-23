@@ -582,4 +582,25 @@ public class PlayerMovement : MonoBehaviour
         if (currentSpeed > 0.5f) return "WALKING";
         return "IDLE";
     }
+    
+    public void ApplyRecoil(Vector3 recoilForce)
+    {
+        // 1. Vertical Force (Boost upwards/downwards)
+        velocity.y += recoilForce.y;
+
+        // 2. Horizontal Force (Dash boost)
+        Vector3 horizontalForce = new Vector3(recoilForce.x, 0, recoilForce.z);
+        Vector3 currentHorizontalVel = moveDirection * currentSpeed;
+        Vector3 newHorizontalVel = currentHorizontalVel + horizontalForce;
+        
+        currentSpeed = Mathf.Max(currentSpeed, newHorizontalVel.magnitude);
+        
+        if (newHorizontalVel.magnitude > 0.1f)
+        {
+            moveDirection = newHorizontalVel.normalized;
+        }
+        
+        StartCoroutine(CameraShakeRoutine(0.2f, 0.4f)); 
+    }
+    
 }
