@@ -70,7 +70,9 @@ public class Shotgun : MonoBehaviour
     }
 
     void Update()
-    {
+    {   
+        if (Time.timeScale == 0f) return;
+        
         // Shoot systems
         if (Input.GetMouseButtonDown(0) && !isShooting && !isReloading && Time.time >= nextFireTime)
         {

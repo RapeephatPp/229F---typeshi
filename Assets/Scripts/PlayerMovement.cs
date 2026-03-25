@@ -95,6 +95,10 @@ public class PlayerMovement : MonoBehaviour
     private float originalHeight;
     private float nextDashTime;
     private float wallJumpTimer;
+    private float defaultIdleBob;
+    private float defaultWalkBob;
+    private float defaultRunBob;
+    private float defaultLandShake;
     
     // Camera Effect Variables
     private Vector3 cameraBaseLocalPos;
@@ -107,16 +111,27 @@ public class PlayerMovement : MonoBehaviour
     private RaycastHit currentWallHit;
 
     void Start()
-    {   // Load Stats From Setting
+    {   
+        
+        // Load Stats From Setting
         mouseSensitivity = PlayerPrefs.GetFloat("Sensitivity", 200f);
         normalFOV = PlayerPrefs.GetFloat("FOV", 60f);
     
         // Load Game Feel From Setting
-        bool enableBob = PlayerPrefs.GetInt("HeadBob", 1) == 1;
-        bool enableShake = PlayerPrefs.GetInt("ScreenShake", 1) == 1;
-    
-        if (!enableBob) { idleBobAmount = 0; walkBobAmount = 0; runBobAmount = 0; }
-        if (!enableShake) { landShakeMagnitude = 0; }
+        if (PlayerPrefs.GetInt("HeadBob", 1) == 0) 
+        { 
+            idleBobAmount = 0; walkBobAmount = 0; runBobAmount = 0; 
+        }
+        if (PlayerPrefs.GetInt("ScreenShake", 1) == 0) 
+        { 
+            landShakeMagnitude = 0; 
+        }
+        
+        defaultIdleBob = idleBobAmount;
+        defaultWalkBob = walkBobAmount;
+        defaultRunBob = runBobAmount;
+        defaultLandShake = landShakeMagnitude;
+        ApplySettingsFromSave();
         
         controller = GetComponent<CharacterController>();
         originalHeight = controller.height;
@@ -137,7 +152,9 @@ public class PlayerMovement : MonoBehaviour
     }
 
     void Update()
-    {
+    {   
+        if (Time.timeScale == 0f) return;
+        
         if (isClimbing) return; 
         
         if (wallJumpTimer > 0) wallJumpTimer -= Time.deltaTime;
@@ -611,6 +628,23 @@ public class PlayerMovement : MonoBehaviour
         }
         
         StartCoroutine(CameraShakeRoutine(0.2f, 0.4f)); 
+    }
+    
+    public void ApplySettingsFromSave()
+    {
+        // 1. ดึงค่าจากที่เซฟไว้
+        mouseSensitivity = PlayerPrefs.GetFloat("Sensitivity", 100f);
+        normalFOV = PlayerPrefs.GetFloat("FOV", 60f);
+        if(playerCamera != null) playerCamera.fieldOfView = normalFOV;
+
+        // 2. จัดการ Head Bob และ Screen Shake
+        bool enableBob = PlayerPrefs.GetInt("HeadBob", 1) == 1;
+        if (!enableBob) { idleBobAmount = 0; walkBobAmount = 0; runBobAmount = 0; }
+        else { idleBobAmount = defaultIdleBob; walkBobAmount = defaultWalkBob; runBobAmount = defaultRunBob; }
+
+        bool enableShake = PlayerPrefs.GetInt("ScreenShake", 1) == 1;
+        if (!enableShake) { landShakeMagnitude = 0; }
+        else { landShakeMagnitude = defaultLandShake; }
     }
     
 }
