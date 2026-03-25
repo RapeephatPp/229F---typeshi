@@ -9,6 +9,14 @@ public class Shotgun : MonoBehaviour
     [SerializeField] private float damagePerPellet = 10f; 
     [SerializeField] private float spreadAngle = 7f; 
     [SerializeField] private float range = 30f; 
+    
+    [Header("Ammo & Fire Rate")]
+    [SerializeField] private float fireRate = 1f; // Shoot speed = 1 (ยิงได้วิละ 1 นัด)
+    [SerializeField] private int maxAmmo = 5; // Max Ammo
+    [SerializeField] private KeyCode reloadKey = KeyCode.R; // Reload button
+    
+    [Header("Effects")]
+    [SerializeField] private GameObject bulletTracePrefab;
 
     [Header("Mobility & External Recoil")]
     [SerializeField] private float playerRecoilForce = 15f; 
@@ -30,50 +38,57 @@ public class Shotgun : MonoBehaviour
     [SerializeField] private float bobSpeed = 12f;
     [SerializeField] private float bobAmount = 15f;
 
-    [Header("Dynamic: Punchy Recoil Feel (No Scaling)")]
-    // [แก้ไข] เพิ่มแรงกระตุกถอยหลังและลงล่างให้รุนแรงขึ้นเพื่อชดเชยการลบ Scale
+    [Header("Dynamic: Punchy Recoil Feel")]
     [SerializeField] private Vector2 recoilKickback = new Vector2(0f, -150f); 
-    // [แก้ไข] เพิ่มมุมเอียงปืนตอนโดนถีบให้เยอะขึ้น (สะใจขึ้น)
     [SerializeField] private float recoilRotation = 12f; 
-    [SerializeField] private float recoilRecoverySpeed = 10f; // ความเร็วดึงปืนกลับ
+    [SerializeField] private float recoilRecoverySpeed = 10f; 
 
     [Header("References")]
     [SerializeField] private Camera playerCamera;
     [SerializeField] private PlayerMovement playerMovement;
 
     private bool isShooting = false;
+    private bool isReloading = false;
     private Vector2 originalPosition;
+    private float nextFireTime = 0f;
+    private int currentAmmo; // เก็บกระสุนปัจจุบัน
 
-    // ตัวแปรเก็บค่า Dynamic
     private Vector2 currentSway;
     private Vector2 currentBob;
     private float bobTimer;
-    
     private Vector2 currentRecoilPos;
     private float currentRecoilRot;
 
     void Start()
     {
-        if (gunRectTransform != null)
-        {
-            originalPosition = gunRectTransform.anchoredPosition;
-        }
-        
+        currentAmmo = maxAmmo; 
+
+        if (gunRectTransform != null) originalPosition = gunRectTransform.anchoredPosition;
         if (playerCamera == null) playerCamera = Camera.main;
         if (playerMovement == null) playerMovement = GetComponentInParent<PlayerMovement>();
-        
-        if (gunImage != null && idleSprite != null)
-        {
-            gunImage.sprite = idleSprite;
-        }
+        if (gunImage != null && idleSprite != null) gunImage.sprite = idleSprite;
     }
 
     void Update()
     {
-        // ยิง
-        if (Input.GetMouseButtonDown(0) && !isShooting)
+        // Shoot systems
+        if (Input.GetMouseButtonDown(0) && !isShooting && !isReloading && Time.time >= nextFireTime)
         {
-            StartCoroutine(ShootSequence());
+            if (currentAmmo > 0)
+            {
+                StartCoroutine(ShootSequence());
+            }
+            else
+            {
+                // If out of ammo reload
+                StartCoroutine(ReloadSequence());
+            }
+        }
+
+        // Reload with R key
+        if (Input.GetKeyDown(reloadKey) && !isShooting && !isReloading && currentAmmo < maxAmmo)
+        {
+            StartCoroutine(ReloadSequence());
         }
 
         HandleDynamicWeaponFeel();
@@ -83,58 +98,45 @@ public class Shotgun : MonoBehaviour
     {
         if (gunRectTransform == null) return;
 
-        // 1. Weapon Sway (หน่วงตามเมาส์)
         float mouseX = -Input.GetAxis("Mouse X") * swayAmount;
         float mouseY = -Input.GetAxis("Mouse Y") * swayAmount;
         mouseX = Mathf.Clamp(mouseX, -maxSwayAmount, maxSwayAmount);
         mouseY = Mathf.Clamp(mouseY, -maxSwayAmount, maxSwayAmount);
         currentSway = Vector2.Lerp(currentSway, new Vector2(mouseX, mouseY), Time.deltaTime * swaySmoothness);
 
-        // 2. Movement Bob (เด้งตามการเดิน)
         float currentSpeed = playerMovement != null ? playerMovement.GetCurrentSpeed() : 0f;
-        if (currentSpeed > 1f) // ถ้ากำลังเดิน/วิ่ง
+        if (currentSpeed > 1f) 
         {
-            // เร่งจังหวะ Bob ตามความเร็วตัวละคร
             bobTimer += Time.deltaTime * bobSpeed * (currentSpeed / 10f); 
-            currentBob.x = Mathf.Cos(bobTimer / 2f) * bobAmount; // ขยับซ้ายขวาแบบ Figure-8
-            currentBob.y = Mathf.Sin(bobTimer) * bobAmount;      // ขยับขึ้นลง
+            currentBob.x = Mathf.Cos(bobTimer / 2f) * bobAmount; 
+            currentBob.y = Mathf.Sin(bobTimer) * bobAmount;      
         }
-        else // ถ้าหยุดนิ่ง
+        else 
         {
             bobTimer = 0f;
             currentBob = Vector2.Lerp(currentBob, Vector2.zero, Time.deltaTime * 5f);
         }
 
-        // 3. Recoil Recovery (ดึงค่า Recoil กลับเป็น 0 อย่างนุ่มนวล)
         currentRecoilPos = Vector2.Lerp(currentRecoilPos, Vector2.zero, Time.deltaTime * recoilRecoverySpeed);
         currentRecoilRot = Mathf.Lerp(currentRecoilRot, 0f, Time.deltaTime * recoilRecoverySpeed);
 
-        // === รวมร่างทุกระบบแล้วอัปเดตใส่ UI ปืน ===
-        // ตำแหน่ง (Position)
         gunRectTransform.anchoredPosition = originalPosition + currentSway + currentBob + currentRecoilPos;
-        
-        // การหมุน (Rotation - เอียงเวลาหันเมาส์ + เอียงจาก Recoil)
         float tiltOffset = currentSway.x * 0.2f; 
         gunRectTransform.localRotation = Quaternion.Euler(0, 0, currentRecoilRot + tiltOffset);
-        
-        // === [ลบส่วน Scale ทิ้งไปแล้ว] ===
     }
 
     private IEnumerator ShootSequence()
     {
         isShooting = true;
+        currentAmmo--; 
+        nextFireTime = Time.time + fireRate; 
 
-        // --- เพิ่มแรงถีบแบบ Dynamic (Punchy) ---
-        // สุ่มให้มันเอียงซ้ายหรือขวานิดๆ เพื่อความเป็นธรรมชาติ
         float randomRot = Random.Range(-recoilRotation, recoilRotation);
-        // สุ่มให้ปืนเยื้องไปซ้ายหรือขวานิดหน่อยเวลาถีบ
         float randomX = Random.Range(-30f, 30f); 
         
-        currentRecoilPos = recoilKickback + new Vector2(randomX, 0); // กระตุกปืนลงและเยื้องข้าง
-        currentRecoilRot = randomRot; // ปืนเอียง
-        // === [ลบ currentRecoilScale ทิ้งไปแล้ว] ===
+        currentRecoilPos = recoilKickback + new Vector2(randomX, 0); 
+        currentRecoilRot = randomRot; 
 
-        // โชว์รูปและทำดาเมจ
         if (fireFrames.Length > 0)
         {
             gunImage.sprite = fireFrames[0];
@@ -155,6 +157,7 @@ public class Shotgun : MonoBehaviour
             }
         }
 
+        // Pump action animation
         if (pumpFrames.Length > 0)
         {
             for (int i = 0; i < pumpFrames.Length; i++)
@@ -168,8 +171,37 @@ public class Shotgun : MonoBehaviour
         isShooting = false;
     }
 
+    private IEnumerator ReloadSequence()
+    {
+        isReloading = true;
+
+        // ดันปืนลงเพื่อซ่อนตอนรีโหลด
+        currentRecoilPos = new Vector2(0, -50f);
+        currentRecoilRot = 15f;
+
+        // วนลูปเล่นแอนิเมชันชักปืนจนกว่ากระสุนจะเต็ม (หรือเล่นซ้ำ 2 รอบเพื่อให้ดูนานขึ้น)
+        for (int round = 0; round < 2; round++)
+        {
+            if (pumpFrames.Length > 0)
+            {
+                for (int i = 0; i < pumpFrames.Length; i++)
+                {
+                    gunImage.sprite = pumpFrames[i];
+                    yield return new WaitForSeconds(timePerFrame * 1.5f); // เล่นช้าลงนิดนึงตอนรีโหลด
+                }
+            }
+        }
+
+        currentAmmo = maxAmmo; // เติมกระสุนเต็ม
+        gunImage.sprite = idleSprite;
+        isReloading = false;
+    }
+
     private void FirePellets()
     {
+        // จุดกำเนิดรอยกระสุน (จำลองว่ายิงออกมาจากมุมขวาล่างของกล้อง)
+        Vector3 fakeBarrelEnd = playerCamera.transform.position + playerCamera.transform.forward * 0.8f - playerCamera.transform.up * 0.2f + playerCamera.transform.right * 0.2f;
+
         for (int i = 0; i < pelletCount; i++)
         {
             Vector3 spread = playerCamera.transform.forward;
@@ -183,7 +215,32 @@ public class Shotgun : MonoBehaviour
                 {
                     enemy.TakeDamage(damagePerPellet);
                 }
+                
+                // วาดรอยกระสุนไปที่จุดที่โดน
+                SpawnTrace(fakeBarrelEnd, hit.point);
+            }
+            else
+            {
+                // ถ้าไม่โดนอะไรเลย ให้วาดรอยกระสุนไปสุดระยะ
+                SpawnTrace(fakeBarrelEnd, playerCamera.transform.position + spread * range);
             }
         }
     }
+
+    private void SpawnTrace(Vector3 start, Vector3 end)
+    {
+        if (bulletTracePrefab != null)
+        {
+            GameObject trace = Instantiate(bulletTracePrefab, start, Quaternion.identity);
+            BulletTrace traceScript = trace.GetComponent<BulletTrace>();
+            if (traceScript != null)
+            {
+                traceScript.SetTrace(start, end);
+            }
+        }
+    }
+
+    // Getter สำหรับให้ UI ดึงข้อมูลไปแสดง
+    public int GetCurrentAmmo() { return currentAmmo; }
+    public int GetMaxAmmo() { return maxAmmo; }
 }

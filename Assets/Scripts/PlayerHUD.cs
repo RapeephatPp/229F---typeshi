@@ -6,49 +6,51 @@ public class PlayerHUD : MonoBehaviour
     [Header("UI Elements")]
     [SerializeField] TextMeshProUGUI speedText;
     [SerializeField] TextMeshProUGUI stateText;
-    [SerializeField] TextMeshProUGUI maxSpeedText; // New text element for Max Speed
+    [SerializeField] TextMeshProUGUI maxSpeedText; 
+    [SerializeField] TextMeshProUGUI ammoText; // เพิ่ม UI กระสุน
 
-    [Header("Target Player")]
+    [Header("Target References")]
     [SerializeField] PlayerMovement player;
+    [SerializeField] Shotgun playerShotgun; // ลิงก์ไปยังปืน
 
     [Header("Speed Colors")]
     [SerializeField] Color normalColor = Color.white;
     [SerializeField] Color fastColor = Color.yellow;
     [SerializeField] Color blazingColor = Color.red;
 
-    // Internal variable to keep track of the highest speed reached
     private float maxSpeedRecord = 0f;
 
     void Update()
     {
         if (player == null) return;
 
-        // 1. Get current speed from player
         float currentSpeed = player.GetCurrentSpeed();
         
-        // 2. Update Max Speed Record if current speed is higher
         if (currentSpeed > maxSpeedRecord)
         {
             maxSpeedRecord = currentSpeed;
         }
 
-        // 3. Update UI Texts
-        speedText.text = $"SPEED: {currentSpeed:F1} m/s";
-        
-        if (maxSpeedText != null)
+        // อัปเดต UI ความเร็ว
+        if (speedText != null) speedText.text = $"SPEED: {currentSpeed:F1} m/s";
+        if (maxSpeedText != null) maxSpeedText.text = $"MAX SPEED: {maxSpeedRecord:F1} m/s";
+
+        if (currentSpeed >= 20f) speedText.color = blazingColor;
+        else if (currentSpeed >= 14f) speedText.color = fastColor;
+        else speedText.color = normalColor;
+
+        if (stateText != null) stateText.text = player.GetMovementState();
+
+        // อัปเดต UI กระสุน
+        if (ammoText != null && playerShotgun != null)
         {
-            maxSpeedText.text = $"MAX SPEED: {maxSpeedRecord:F1} m/s";
+            ammoText.text = $"{playerShotgun.GetCurrentAmmo()} / {playerShotgun.GetMaxAmmo()}";
+            
+            // เปลี่ยนสีเป็นสีแดงถ้ากระสุนหมด
+            if (playerShotgun.GetCurrentAmmo() == 0)
+                ammoText.color = Color.red;
+            else
+                ammoText.color = Color.white;
         }
-
-        // Change color based on how fast we are going
-        if (currentSpeed >= 20f) 
-            speedText.color = blazingColor;
-        else if (currentSpeed >= 14f) 
-            speedText.color = fastColor;
-        else 
-            speedText.color = normalColor;
-
-        // 4. Update Movement State Text
-        stateText.text = player.GetMovementState();
     }
 }

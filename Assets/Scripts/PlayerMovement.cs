@@ -107,7 +107,17 @@ public class PlayerMovement : MonoBehaviour
     private RaycastHit currentWallHit;
 
     void Start()
-    {
+    {   // Load Stats From Setting
+        mouseSensitivity = PlayerPrefs.GetFloat("Sensitivity", 200f);
+        normalFOV = PlayerPrefs.GetFloat("FOV", 60f);
+    
+        // Load Game Feel From Setting
+        bool enableBob = PlayerPrefs.GetInt("HeadBob", 1) == 1;
+        bool enableShake = PlayerPrefs.GetInt("ScreenShake", 1) == 1;
+    
+        if (!enableBob) { idleBobAmount = 0; walkBobAmount = 0; runBobAmount = 0; }
+        if (!enableShake) { landShakeMagnitude = 0; }
+        
         controller = GetComponent<CharacterController>();
         originalHeight = controller.height;
         currentSpeed = walkSpeed;
