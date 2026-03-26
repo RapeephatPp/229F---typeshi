@@ -12,7 +12,7 @@ public class FallDetector : MonoBehaviour
         if(player != null)
             {
                 Debug.Log(other.name + " Fall Dead");
-                player.TakeDamage(999999);
+                player.TakeDamage(99999);
 
             }
 
