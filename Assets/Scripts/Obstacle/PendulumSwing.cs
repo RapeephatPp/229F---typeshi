@@ -1,9 +1,10 @@
+using System.Runtime.Serialization;
 using System.Security;
 using UnityEngine;
 
 public class PendulumSwing : MonoBehaviour
 {
-       public float damage = 20f;     
+       [SerializeField] float damage = 20f;     
 
 public float pushForce = 15f;     
     public float maxSpeed = 8f;      
@@ -49,7 +50,7 @@ public float pushForce = 15f;
             PlayerHealth ply = other.GetComponent<PlayerHealth>();
             if (ply != null)
             {
-                ply.TakeDamage(20f); 
+                ply.TakeDamage(damage); 
             }
 
             // (Knockback)
