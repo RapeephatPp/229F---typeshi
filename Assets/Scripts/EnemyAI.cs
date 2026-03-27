@@ -58,37 +58,94 @@ public class EnemyAI : MonoBehaviour
     {
         if (player == null || isClimbing || agent == null) return;
 
+        // ==========================================
+        // ระบบไล่ล่าแบบลอยตัว (Ghost Tracking)
+        // ทำงานเฉพาะตอนที่ Agent ปิดอยู่ (คือตอนที่กระโดดขึ้นไปบนกล่องที่ไม่มี NavMesh)
+        // เอาการเช็ค isOnNavMesh ออกป้องกันบั๊กที่มันสลับโหมดลอยไปมาจนเด้งเวลาเดินบนสะพาน
+        // ==========================================
+        if (!agent.isActiveAndEnabled)
+        {
+            GhostTrackingUpdate();
+            return;
+        }
+
         moveSpeed = agent.speed;
 
         // แก้อาการเดินอืด/หนืด โดยปรับอัตราเร่ง (Acceleration) ให้สัมพันธ์กับความเร็ว
         if (agent.acceleration < moveSpeed * 5f) agent.acceleration = moveSpeed * 5f;
         if (agent.angularSpeed < 800f) agent.angularSpeed = 800f;
 
+        // แยกคิดระยะห่างแบบ 3D และ 2D (เวลาผู้เล่นกระโดด จะได้ไม่บั๊กหลุดเป้าหมาย)
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        float distanceToPlayerXZ = Vector2.Distance(new Vector2(transform.position.x, transform.position.z), new Vector2(player.position.x, player.position.z));
 
         if (agent.isOnNavMesh)
         {
             // ซิงค์การเดินแค่ 12 สแกนต่อวินาที ป้องกันบั๊ก NavMesh ไถลขอบแล้วกระตุกเด้งรัวๆ
             if (Time.time > lastPathUpdate + 0.08f)
             {
+                // กลับมาใช้ player.position นำทางตรงๆ เพราะ SetDestination ดรอป Y ลงพื้นให้อัตโนมัติอยู่แล้ว
                 agent.SetDestination(player.position);
                 lastPathUpdate = Time.time;
             }
         }
 
-        if (distanceToPlayer <= attackRange)
+        // โจมตีถ้าระยะ XZ ใกล้พอ และความสูงไม่ห่างกันเกินไป (เผื่อผู้เล่นกระโดดหลบบนพื้นราบ จะได้ยังโดนตี)
+        if (distanceToPlayerXZ <= attackRange && Mathf.Abs(player.position.y - transform.position.y) <= attackRange + 1.5f)
         {
             AttackPlayer();
         }
 
         // --- ระบบจับติดกำแพง แล้วปีนอัตโนมัติ (Parkour) ---
-        // กระโดดเฉพาะตอนที่ AI เดินชนขอบกำแพง/หน้าผา แล้วทางไปต่อขาด
-        if (agent.pathStatus == NavMeshPathStatus.PathPartial || agent.pathStatus == NavMeshPathStatus.PathInvalid)
+        // ลองกระโดดเมื่อ: 1. ทางขาด/ไร้ทางไป หรือ 2. ถึงที่หมายบริเวณใต้ตัวผู้เล่นแล้วแต่ผู้เล่นอยู่บนที่สูงมาก (เช่น บนกล่อง >1.5m)
+        bool isPathIncomplete = (agent.pathStatus == NavMeshPathStatus.PathPartial || agent.pathStatus == NavMeshPathStatus.PathInvalid);
+        bool isStuckNearPlayer = (agent.pathStatus == NavMeshPathStatus.PathComplete && distanceToPlayerXZ < 4f && (player.position.y - transform.position.y) > 1.5f);
+
+        if (isPathIncomplete || isStuckNearPlayer)
         {
-            // ถ้าวิ่งมาถึงขอบทางขาดแล้วความเร็วตก (ไถลขอบตาราง NavMesh) ให้หาทางปีนหรือโดดลง
+            // ถ้าความเร็วตก (เดินติดขอบตาราง/กำแพง) ให้หาทางปีนหรือโดดลง
             if (agent.velocity.sqrMagnitude < 2.5f)
             {
                 TryAutoParkour();
+            }
+        }
+    }
+
+    private void GhostTrackingUpdate()
+    {
+        // โหมดผีลอย: ไล่ล่าผู้เล่นแบบไร้ NavMesh แบบเดียวกับ Nextbot ใน Gmod
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        float distanceToPlayerXZ = Vector2.Distance(new Vector2(transform.position.x, transform.position.z), new Vector2(player.position.x, player.position.z));
+
+        Vector3 targetDir = (player.position - transform.position).normalized;
+        
+        // ถ้าอยู่สูงกว่าผู้เล่นมาก ให้ทิ้งตัวลงนิดหน่อย
+        if (transform.position.y > player.position.y + 0.5f && distanceToPlayerXZ < 2f) 
+        {
+            targetDir.y -= 2f;
+            targetDir.Normalize();
+        }
+        
+        transform.position += targetDir * moveSpeed * Time.deltaTime;
+        
+        Vector3 lookPlane = new Vector3(player.position.x, transform.position.y, player.position.z);
+        if (Vector3.Distance(transform.position, lookPlane) > 0.1f)
+            transform.LookAt(lookPlane);
+
+        // โจมตี
+        if (distanceToPlayerXZ <= attackRange && Mathf.Abs(player.position.y - transform.position.y) <= attackRange + 1.5f)
+        {
+            AttackPlayer();
+        }
+
+        // ถ้าลอยมาจนเจอพื้นที่มี NavMesh แล้ว (เช่นหล่นจากกล่อง) ให้เปิดกลับมาเดินปกติ
+        if (NavMesh.SamplePosition(transform.position, out NavMeshHit hit, 0.5f, NavMesh.AllAreas))
+        {
+            if (Mathf.Abs(hit.position.y - transform.position.y) < 0.3f)
+            {
+                agent.enabled = true;
+                if (agent.isActiveAndEnabled)
+                    agent.Warp(hit.position);
             }
         }
     }
@@ -211,7 +268,18 @@ public class EnemyAI : MonoBehaviour
         transform.position = finalLandingPos;
         transform.rotation = targetRot;
         
-        agent.enabled = true; 
+        // เช็คว่าจุดที่ลงเหยียบ มี NavMesh รองรับไหม 
+        // ถ้าไม่มี (เช่น บนกล่องหรือโซฟา) ห้ามเปิด Agent เด็ดขาด ไม่งั้น Unity จะบัคดูดตัวผีลงพื้นทันที ทำให้เกิดอาการ "ผีเด้งกระตุก"
+        if (NavMesh.SamplePosition(finalLandingPos, out NavMeshHit validHit, 0.5f, NavMesh.AllAreas))
+        {
+            if (Mathf.Abs(validHit.position.y - finalLandingPos.y) < 0.5f)
+            {
+                agent.enabled = true; 
+                if (agent.isActiveAndEnabled)
+                    agent.Warp(validHit.position);
+            }
+        }
+        
         yield return null;
         isClimbing = false;
     }
@@ -244,7 +312,7 @@ public class EnemyAI : MonoBehaviour
     {
         if (Time.time >= lastAttackTime + attackCooldown)
         {
-            agent.isStopped = true;
+            // เอา isStopped ออก เพื่อไม่ให้เกิดอาการกระตุก หยุดเดิน หรือเด้งเวลากระโดดฟัน
             transform.LookAt(new Vector3(player.position.x, transform.position.y, player.position.z));
 
             if (playerHealth != null)
@@ -253,15 +321,6 @@ public class EnemyAI : MonoBehaviour
             }
 
             lastAttackTime = Time.time;
-            Invoke("ResumeAgent", 0.5f);
-        }
-    }
-
-    private void ResumeAgent()
-    {
-        if (agent != null && agent.isOnNavMesh && !isClimbing)
-        {
-            agent.isStopped = false;
         }
     }
 
