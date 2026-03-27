@@ -3,33 +3,41 @@ using UnityEngine.SceneManagement;
 
 public class LevelMove : MonoBehaviour
 {
-   [Header("Settings")]
+    [Header("Settings")]
     public string nextSceneName;
     public bool useBuildIndex = true;
 
-    
     private void OnTriggerEnter(Collider other)
     {
-        
         if (other.CompareTag("Player"))
         {
-                   
             GoToNextLevel();
         }
     }
 
     void GoToNextLevel()
     {
-        Debug.Log("Player reached the exit! Loading next level...");
+        Debug.Log("Player reached the exit! Fading to next level...");
 
+        string targetScene = nextSceneName;
+
+        // ถ้าตั้งให้โหลดด่านตาม Index ให้ไปดึงชื่อด่านถัดไปมา
         if (useBuildIndex)
         {          
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+            int nextIndex = SceneManager.GetActiveScene().buildIndex + 1;
+            string scenePath = SceneUtility.GetScenePathByBuildIndex(nextIndex);
+            targetScene = System.IO.Path.GetFileNameWithoutExtension(scenePath);
+        }
+
+        // เรียกใช้งาน SceneFader ถ้ามีในฉาก
+        if (SceneFader.Instance != null)
+        {
+            SceneFader.Instance.FadeToScene(targetScene);
         }
         else
         {
-            // โหลดฉากตามชื่อที่พิมพ์ไว้ในช่อง nextSceneName
-            SceneManager.LoadScene(nextSceneName);
+            // ถ้าลืมใส่ SceneFader ไว้ ก็ให้โหลดแบบปกติกันเหนียว
+            SceneManager.LoadScene(targetScene);
         }
     }
 }

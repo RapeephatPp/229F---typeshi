@@ -8,7 +8,12 @@ public class PlayerHUD : MonoBehaviour
     [SerializeField] TextMeshProUGUI stateText;
     [SerializeField] TextMeshProUGUI maxSpeedText; 
     [SerializeField] TextMeshProUGUI ammoText; 
-
+    
+    [Header("Level Info UI")]
+    [SerializeField] TextMeshProUGUI levelText;    // ชื่อด่าน
+    [SerializeField] TextMeshProUGUI timerText;    // เวลาปัจจุบัน
+    [SerializeField] TextMeshProUGUI bestTimeText; // เวลาที่ดีที่สุด
+    
     [Header("Target References")]
     [SerializeField] PlayerMovement player;
     [SerializeField] Shotgun playerShotgun; 
@@ -25,11 +30,7 @@ public class PlayerHUD : MonoBehaviour
         if (player == null) return;
 
         float currentSpeed = player.GetCurrentSpeed();
-        
-        if (currentSpeed > maxSpeedRecord)
-        {
-            maxSpeedRecord = currentSpeed;
-        }
+        if (currentSpeed > maxSpeedRecord) maxSpeedRecord = currentSpeed;
 
         if (speedText != null) speedText.text = $"SPEED: {currentSpeed:F1} m/s";
         if (maxSpeedText != null) maxSpeedText.text = $"MAX SPEED: {maxSpeedRecord:F1} m/s";
@@ -53,5 +54,33 @@ public class PlayerHUD : MonoBehaviour
             else
                 ammoText.color = Color.white; // สีขาว = ปกติ
         }
+        
+        if (GameManager.Instance != null)
+        {
+            // แสดงชื่อด่าน (ดึงมาจากชื่อ Scene)
+            if (levelText != null) 
+                levelText.text = "LEVEL: " + GameManager.Instance.currentLevelName;
+            
+            // แสดงเวลาปัจจุบัน
+            if (timerText != null) 
+                timerText.text = "TIME: " + FormatTime(GameManager.Instance.currentTime);
+            
+            // แสดง Best Time
+            if (bestTimeText != null) 
+            {
+                if (GameManager.Instance.bestTime > 0f)
+                    bestTimeText.text = "BEST: " + FormatTime(GameManager.Instance.bestTime);
+                else
+                    bestTimeText.text = "BEST: --:--.--"; // ถ้ายังไม่มีสถิติให้โชว์ขีด
+            }
+        }
+    }
+    
+    private string FormatTime(float timeInSeconds)
+    {
+        int minutes = Mathf.FloorToInt(timeInSeconds / 60f);
+        int seconds = Mathf.FloorToInt(timeInSeconds % 60f);
+        int milliseconds = Mathf.FloorToInt((timeInSeconds * 100f) % 100f);
+        return string.Format("{0:00}:{1:00}.{2:00}", minutes, seconds, milliseconds);
     }
 }

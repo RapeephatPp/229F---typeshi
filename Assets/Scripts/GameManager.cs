@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using TMPro; // สำคัญ: ต้องมีเพื่อใช้ TextMeshPro
+using TMPro;
 
 public class GameManager : MonoBehaviour
 {
@@ -11,7 +11,13 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject pausePanel;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject optionsPanel;
-
+    
+    [Header("Level Information")]
+    [HideInInspector] public string currentLevelName;
+    [HideInInspector] public float currentTime;
+    [HideInInspector] public float bestTime;
+    [HideInInspector] public bool timerActive = true;
+    
     [Header("Options Sliders")]
     [SerializeField] private Slider masterVolSlider;
     [SerializeField] private Slider musicVolSlider;
@@ -43,10 +49,20 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         LoadSettingsUI(); 
+        
+        currentLevelName = SceneManager.GetActiveScene().name;
+        bestTime = PlayerPrefs.GetFloat("BestTime_" + currentLevelName, 0f); 
+        currentTime = 0f;
+        timerActive = true;
     }
 
     private void Update()
-    {
+    {   
+        if (timerActive && !isPaused && !isGameOver)
+        {
+            currentTime += Time.deltaTime; 
+        }
+        
         if ((Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P)) && !isGameOver)
         {
             if (isPaused)
@@ -60,7 +76,7 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-
+    
     public void PauseGame()
     {
         isPaused = true;
@@ -93,13 +109,21 @@ public class GameManager : MonoBehaviour
     public void RestartGame()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name); 
+        
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.FadeToScene(SceneManager.GetActiveScene().name); 
+        else
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void LoadMainMenu()
-    {
+    {   
         Time.timeScale = 1f;
-        SceneManager.LoadScene("MainMenu"); 
+        
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.FadeToScene("MainMenu"); 
+        else
+            SceneManager.LoadScene("MainMenu");
     }
 
     public void OpenOptions()
@@ -169,5 +193,21 @@ public class GameManager : MonoBehaviour
         if (vfxVolText != null) vfxVolText.text = Mathf.RoundToInt(vfxVolSlider.value * 100) + "%";
         if (fovText != null) fovText.text = Mathf.RoundToInt(fovSlider.value).ToString();
         if (sensText != null) sensText.text = Mathf.RoundToInt(sensSlider.value).ToString();
+    }
+    
+    public void LevelComplete()
+    {
+        timerActive = false; // Time Pause
+
+        // Best time Check
+        if (bestTime == 0f || currentTime < bestTime)
+        {
+            bestTime = currentTime;
+            PlayerPrefs.SetFloat("BestTime_" + currentLevelName, bestTime);
+            PlayerPrefs.Save();
+            Debug.Log("New Best Time: " + bestTime);
+        }
+        
+        // Level clear UI here V
     }
 }
