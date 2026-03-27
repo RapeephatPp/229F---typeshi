@@ -7,11 +7,11 @@ public class PlayerHUD : MonoBehaviour
     [SerializeField] TextMeshProUGUI speedText;
     [SerializeField] TextMeshProUGUI stateText;
     [SerializeField] TextMeshProUGUI maxSpeedText; 
-    [SerializeField] TextMeshProUGUI ammoText; // เพิ่ม UI กระสุน
+    [SerializeField] TextMeshProUGUI ammoText; 
 
     [Header("Target References")]
     [SerializeField] PlayerMovement player;
-    [SerializeField] Shotgun playerShotgun; // ลิงก์ไปยังปืน
+    [SerializeField] Shotgun playerShotgun; 
 
     [Header("Speed Colors")]
     [SerializeField] Color normalColor = Color.white;
@@ -31,7 +31,6 @@ public class PlayerHUD : MonoBehaviour
             maxSpeedRecord = currentSpeed;
         }
 
-        // อัปเดต UI ความเร็ว
         if (speedText != null) speedText.text = $"SPEED: {currentSpeed:F1} m/s";
         if (maxSpeedText != null) maxSpeedText.text = $"MAX SPEED: {maxSpeedRecord:F1} m/s";
 
@@ -41,16 +40,18 @@ public class PlayerHUD : MonoBehaviour
 
         if (stateText != null) stateText.text = player.GetMovementState();
 
-        // อัปเดต UI กระสุน
+        // อัปเดต UI กระสุนแบบใหม่ (กระสุนในปืน / กระสุนสำรอง)
         if (ammoText != null && playerShotgun != null)
         {
-            ammoText.text = $"{playerShotgun.GetCurrentAmmo()} / {playerShotgun.GetMaxAmmo()}";
+            ammoText.text = $"{playerShotgun.GetCurrentAmmo()} / {playerShotgun.GetTotalAmmo()}";
             
-            // เปลี่ยนสีเป็นสีแดงถ้ากระสุนหมด
-            if (playerShotgun.GetCurrentAmmo() == 0)
-                ammoText.color = Color.red;
+            // เปลี่ยนสีแจ้งเตือน
+            if (playerShotgun.GetCurrentAmmo() == 0 && playerShotgun.GetTotalAmmo() == 0)
+                ammoText.color = Color.red; // สีแดง = กระสุนหมดเกลี้ยง ไม่มีให้รีโหลดแล้ว!
+            else if (playerShotgun.GetCurrentAmmo() == 0)
+                ammoText.color = Color.yellow; // สีเหลือง = ปืนว่าเปล่า แต่ยังกด R เพื่อรีโหลดได้
             else
-                ammoText.color = Color.white;
+                ammoText.color = Color.white; // สีขาว = ปกติ
         }
     }
 }

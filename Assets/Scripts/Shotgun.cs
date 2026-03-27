@@ -11,9 +11,11 @@ public class Shotgun : MonoBehaviour
     [SerializeField] private float range = 30f; 
     
     [Header("Ammo & Fire Rate")]
-    [SerializeField] private float fireRate = 1f; // Shoot speed = 1 (ยิงได้วิละ 1 นัด)
-    [SerializeField] private int maxAmmo = 5; // Max Ammo
-    [SerializeField] private KeyCode reloadKey = KeyCode.R; // Reload button
+    [SerializeField] private float fireRate = 1f; 
+    [SerializeField] private int magSize = 5; // ความจุกระสุนในปืน (นัด)
+    [SerializeField] private int startingTotalAmmo = 15; // กระสุนสำรองเริ่มต้น
+    [SerializeField] private int maxTotalAmmo = 50; // พกกระสุนสำรองได้มากสุด
+    [SerializeField] private KeyCode reloadKey = KeyCode.R; 
     
     [Header("Effects")]
     [SerializeField] private GameObject bulletTracePrefab;
@@ -51,7 +53,10 @@ public class Shotgun : MonoBehaviour
     private bool isReloading = false;
     private Vector2 originalPosition;
     private float nextFireTime = 0f;
-    private int currentAmmo; // เก็บกระสุนปัจจุบัน
+    
+    // ตัวแปรระบบกระสุน
+    private int currentAmmo; // กระสุนในปืนตอนนี้
+    private int totalAmmo;   // กระสุนสำรองทั้งหมด
 
     private Vector2 currentSway;
     private Vector2 currentBob;
@@ -61,7 +66,9 @@ public class Shotgun : MonoBehaviour
 
     void Start()
     {
-        currentAmmo = maxAmmo; 
+        // เริ่มเกมมา เติมกระสุนให้เต็มแม็ก และตั้งค่ากระสุนสำรอง
+        currentAmmo = magSize; 
+        totalAmmo = startingTotalAmmo;
 
         if (gunRectTransform != null) originalPosition = gunRectTransform.anchoredPosition;
         if (playerCamera == null) playerCamera = Camera.main;
@@ -73,22 +80,27 @@ public class Shotgun : MonoBehaviour
     {   
         if (Time.timeScale == 0f) return;
         
-        // Shoot systems
+        // ระบบยิง
         if (Input.GetMouseButtonDown(0) && !isShooting && !isReloading && Time.time >= nextFireTime)
         {
             if (currentAmmo > 0)
             {
                 StartCoroutine(ShootSequence());
             }
+            else if (totalAmmo > 0)
+            {
+                // ถ้าในปืนหมด แต่มีกระสุนสำรอง ให้รีโหลด
+                StartCoroutine(ReloadSequence());
+            }
             else
             {
-                // If out of ammo reload
-                StartCoroutine(ReloadSequence());
+                // กระสุนหมดเกลี้ยงทุกอย่าง! (สามารถใส่เสียงปืนแกร๊กๆ ตรงนี้ได้)
+                Debug.Log("Out of Ammo!");
             }
         }
 
-        // Reload with R key
-        if (Input.GetKeyDown(reloadKey) && !isShooting && !isReloading && currentAmmo < maxAmmo)
+        // กดรีโหลดด้วยปุ่ม R (ต้องกระสุนในปืนไม่เต็ม และมีกระสุนสำรองเหลือ)
+        if (Input.GetKeyDown(reloadKey) && !isShooting && !isReloading && currentAmmo < magSize && totalAmmo > 0)
         {
             StartCoroutine(ReloadSequence());
         }
@@ -130,7 +142,7 @@ public class Shotgun : MonoBehaviour
     private IEnumerator ShootSequence()
     {
         isShooting = true;
-        currentAmmo--; 
+        currentAmmo--; // หักกระสุนในปืน 1 นัด
         nextFireTime = Time.time + fireRate; 
 
         float randomRot = Random.Range(-recoilRotation, recoilRotation);
@@ -177,11 +189,17 @@ public class Shotgun : MonoBehaviour
     {
         isReloading = true;
 
+        // คำนวณจำนวนกระสุนที่ต้องหยิบมาจากกระเป๋า
+        int ammoNeeded = magSize - currentAmmo;
+        if (totalAmmo < ammoNeeded) 
+        {
+            ammoNeeded = totalAmmo; // ถ้ากระสุนสำรองมีไม่พอเติมเต็มแม็ก ก็หยิบมาเท่าที่มี
+        }
+
         // ดันปืนลงเพื่อซ่อนตอนรีโหลด
         currentRecoilPos = new Vector2(0, -50f);
         currentRecoilRot = 15f;
 
-        // วนลูปเล่นแอนิเมชันชักปืนจนกว่ากระสุนจะเต็ม (หรือเล่นซ้ำ 2 รอบเพื่อให้ดูนานขึ้น)
         for (int round = 0; round < 2; round++)
         {
             if (pumpFrames.Length > 0)
@@ -189,19 +207,21 @@ public class Shotgun : MonoBehaviour
                 for (int i = 0; i < pumpFrames.Length; i++)
                 {
                     gunImage.sprite = pumpFrames[i];
-                    yield return new WaitForSeconds(timePerFrame * 1.5f); // เล่นช้าลงนิดนึงตอนรีโหลด
+                    yield return new WaitForSeconds(timePerFrame * 1.5f);
                 }
             }
         }
 
-        currentAmmo = maxAmmo; // เติมกระสุนเต็ม
+        // โอนย้ายกระสุนจากสำรองมาใส่ปืน
+        totalAmmo -= ammoNeeded;
+        currentAmmo += ammoNeeded; 
+        
         gunImage.sprite = idleSprite;
         isReloading = false;
     }
 
     private void FirePellets()
     {
-        // จุดกำเนิดรอยกระสุน (จำลองว่ายิงออกมาจากมุมขวาล่างของกล้อง)
         Vector3 fakeBarrelEnd = playerCamera.transform.position + playerCamera.transform.forward * 0.8f - playerCamera.transform.up * 0.2f + playerCamera.transform.right * 0.2f;
 
         for (int i = 0; i < pelletCount; i++)
@@ -218,12 +238,10 @@ public class Shotgun : MonoBehaviour
                     enemy.TakeDamage(damagePerPellet);
                 }
                 
-                // วาดรอยกระสุนไปที่จุดที่โดน
                 SpawnTrace(fakeBarrelEnd, hit.point);
             }
             else
             {
-                // ถ้าไม่โดนอะไรเลย ให้วาดรอยกระสุนไปสุดระยะ
                 SpawnTrace(fakeBarrelEnd, playerCamera.transform.position + spread * range);
             }
         }
@@ -242,7 +260,19 @@ public class Shotgun : MonoBehaviour
         }
     }
 
-    // Getter สำหรับให้ UI ดึงข้อมูลไปแสดง
+    // ===============================================
+    // ฟังก์ชันใหม่: เอาไว้เรียกตอนเก็บกล่อง Ammo Pickup
+    // ===============================================
+    public void AddAmmo(int amount)
+    {
+        totalAmmo += amount;
+        if (totalAmmo > maxTotalAmmo) 
+        {
+            totalAmmo = maxTotalAmmo; // กันไม่ให้พกกระสุนเกินขีดจำกัด
+        }
+    }
+
+    // Getters สำหรับ UI
     public int GetCurrentAmmo() { return currentAmmo; }
-    public int GetMaxAmmo() { return maxAmmo; }
+    public int GetTotalAmmo() { return totalAmmo; }
 }

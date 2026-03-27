@@ -151,18 +151,17 @@ public class GameManager : MonoBehaviour
 
     public void ResetSettings()
     {
-        masterVolSlider.value = 1f;
-        musicVolSlider.value = 1f;
-        vfxVolSlider.value = 1f;
+        masterVolSlider.value = 0.5f;
+        musicVolSlider.value = 0.5f;
+        vfxVolSlider.value = 0.5f;
         fovSlider.value = 60f;
-        sensSlider.value = 200f;
+        sensSlider.value = 300f;
         headBobToggle.isOn = true;
         screenShakeToggle.isOn = true;
         
         ApplySettings();
     }
-
-    // ฟังก์ชันใหม่: แปลงค่าจาก Slider มาเป็นตัวหนังสือ
+    
     private void UpdateValueTexts()
     {
         if (masterVolText != null) masterVolText.text = Mathf.RoundToInt(masterVolSlider.value * 100) + "%";

@@ -90,9 +90,9 @@ public class MainMenuController : MonoBehaviour
     {
         if (masterVolSlider == null) return;
         
-        masterVolSlider.value = PlayerPrefs.GetFloat("MasterVol", 1f);
-        musicVolSlider.value = PlayerPrefs.GetFloat("MusicVol", 1f);
-        vfxVolSlider.value = PlayerPrefs.GetFloat("VFXVol", 1f);
+        masterVolSlider.value = PlayerPrefs.GetFloat("MasterVol", 0.5f);
+        musicVolSlider.value = PlayerPrefs.GetFloat("MusicVol", 0.5f);
+        vfxVolSlider.value = PlayerPrefs.GetFloat("VFXVol", 0.5f);
 
         fovSlider.value = PlayerPrefs.GetFloat("FOV", 60f); 
         sensSlider.value = PlayerPrefs.GetFloat("Sensitivity", 200f);
@@ -105,11 +105,11 @@ public class MainMenuController : MonoBehaviour
 
     public void ResetSettings()
     {
-        masterVolSlider.value = 1f;
-        musicVolSlider.value = 1f;
-        vfxVolSlider.value = 1f;
+        masterVolSlider.value = 0.5f;
+        musicVolSlider.value = 0.5f;
+        vfxVolSlider.value = 0.5f;
         fovSlider.value = 60f;
-        sensSlider.value = 200f;
+        sensSlider.value = 300f;
         headBobToggle.isOn = true;
         screenShakeToggle.isOn = true;
         

@@ -2529,7 +2529,6 @@ RectTransform:
   m_Children:
   - {fileID: 1419543979}
   - {fileID: 501188514}
-  - {fileID: 1304620439}
   - {fileID: 2053098651}
   - {fileID: 279277909}
   - {fileID: 828462177}
@@ -4068,9 +4067,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: MainMenuController, Assembly-CSharp
-        m_MethodName: ResetSettings
+      - m_Target: {fileID: 2059803992}
+        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+        m_MethodName: RestartGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -5172,7 +5171,7 @@ MonoBehaviour:
   m_MinValue: 60
   m_MaxValue: 140
   m_WholeNumbers: 1
-  m_Value: 140
+  m_Value: 60
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
@@ -5860,7 +5859,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 1
   m_WholeNumbers: 0
-  m_Value: 1
+  m_Value: 0.5
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
@@ -6322,7 +6321,9 @@ MonoBehaviour:
   spreadAngle: 7
   range: 30
   fireRate: 1
-  maxAmmo: 5
+  magSize: 5
+  startingTotalAmmo: 15
+  maxTotalAmmo: 50
   reloadKey: 114
   bulletTracePrefab: {fileID: 6110824621303878564, guid: 52a8525abd42c194a9bd2f4cf124ba13, type: 3}
   playerRecoilForce: 15
@@ -7884,7 +7885,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 1
   m_WholeNumbers: 0
-  m_Value: 1
+  m_Value: 0.5
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
@@ -8216,16 +8217,16 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1304620438}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.06629181, y: 0.06629181, z: 0.06629181}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 409776555}
+  m_Father: {fileID: 1419543979}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 228, y: -198}
+  m_AnchoredPosition: {x: 15.114532, y: -21.345963}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1304620440
@@ -8672,7 +8673,7 @@ MonoBehaviour:
   m_MinValue: 0
   m_MaxValue: 1
   m_WholeNumbers: 0
-  m_Value: 1
+  m_Value: 0.5
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
@@ -8771,9 +8772,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: MainMenuController, Assembly-CSharp
-        m_MethodName: ResetSettings
+      - m_Target: {fileID: 2059803992}
+        m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
+        m_MethodName: LoadMainMenu
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -8850,7 +8851,8 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 15.084821, y: 15.084821, z: 15.084821}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1304620439}
   m_Father: {fileID: 409776555}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
