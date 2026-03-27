@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
-using TMPro;
+using TMPro; 
 
 public class GameManager : MonoBehaviour
 {
@@ -11,13 +11,17 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject pausePanel;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject optionsPanel;
-    
+
     [Header("Level Information")]
     [HideInInspector] public string currentLevelName;
-    [HideInInspector] public float currentTime;
     [HideInInspector] public float bestTime;
-    [HideInInspector] public bool timerActive = true;
     
+    public static float sessionTime = 0f;
+    public static bool isSessionTimerActive = true;
+    
+    public float currentTime { get { return sessionTime; } }
+    public bool timerActive { get { return isSessionTimerActive; } }
+
     [Header("Options Sliders")]
     [SerializeField] private Slider masterVolSlider;
     [SerializeField] private Slider musicVolSlider;
@@ -49,20 +53,23 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         LoadSettingsUI(); 
-        
+
         currentLevelName = SceneManager.GetActiveScene().name;
+        // ดึงสถิติเวลา Best Time (เซฟแยกตามชื่อด่าน)
         bestTime = PlayerPrefs.GetFloat("BestTime_" + currentLevelName, 0f); 
-        currentTime = 0f;
-        timerActive = true;
+        
+        // สังเกตว่าเรา "เอาบรรทัด sessionTime = 0 ออกไปแล้ว"
+        // เพื่อให้เวลาโหลดด่านใหม่ / Restart ตัวเลขเวลายังเดินต่อจากของเดิม
     }
 
     private void Update()
-    {   
-        if (timerActive && !isPaused && !isGameOver)
+    {
+        // นับเวลาไปเรื่อยๆ ตราบใดที่ยังจับเวลาอยู่ และไม่ได้ Pause หรือตาย
+        if (isSessionTimerActive && !isPaused && !isGameOver)
         {
-            currentTime += Time.deltaTime; 
+            sessionTime += Time.deltaTime; 
         }
-        
+
         if ((Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P)) && !isGameOver)
         {
             if (isPaused)
@@ -76,7 +83,28 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-    
+
+    // ==============================
+    // LEVEL COMPLETION (จบด่าน)
+    // ==============================
+    public void LevelComplete()
+    {
+        // สามารถปล่อยให้เวลาเดินต่อได้ถ้านี่ไม่ใช่ด่านสุดท้าย (คอมเมนต์บรรทัดล่างออก)
+        // isSessionTimerActive = false; 
+
+        // เช็คว่าทำลายสถิติไหม (Split Time)
+        if (bestTime == 0f || sessionTime < bestTime)
+        {
+            bestTime = sessionTime;
+            PlayerPrefs.SetFloat("BestTime_" + currentLevelName, bestTime);
+            PlayerPrefs.Save();
+            Debug.Log("New Best Time for " + currentLevelName + ": " + bestTime);
+        }
+    }
+
+    // ==============================
+    // PAUSE & GAME OVER & OPTIONS
+    // ==============================
     public void PauseGame()
     {
         isPaused = true;
@@ -113,17 +141,17 @@ public class GameManager : MonoBehaviour
         if (SceneFader.Instance != null)
             SceneFader.Instance.FadeToScene(SceneManager.GetActiveScene().name); 
         else
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name); 
     }
 
     public void LoadMainMenu()
-    {   
+    {
         Time.timeScale = 1f;
         
         if (SceneFader.Instance != null)
             SceneFader.Instance.FadeToScene("MainMenu"); 
         else
-            SceneManager.LoadScene("MainMenu");
+            SceneManager.LoadScene("MainMenu"); 
     }
 
     public void OpenOptions()
@@ -150,7 +178,7 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt("ScreenShake", screenShakeToggle.isOn ? 1 : 0);
         PlayerPrefs.Save();
 
-        UpdateValueTexts(); // อัปเดตตัวเลขบนจอทันทีที่เลื่อน
+        UpdateValueTexts(); 
 
         if (playerMovement != null)
         {
@@ -193,21 +221,5 @@ public class GameManager : MonoBehaviour
         if (vfxVolText != null) vfxVolText.text = Mathf.RoundToInt(vfxVolSlider.value * 100) + "%";
         if (fovText != null) fovText.text = Mathf.RoundToInt(fovSlider.value).ToString();
         if (sensText != null) sensText.text = Mathf.RoundToInt(sensSlider.value).ToString();
-    }
-    
-    public void LevelComplete()
-    {
-        timerActive = false; // Time Pause
-
-        // Best time Check
-        if (bestTime == 0f || currentTime < bestTime)
-        {
-            bestTime = currentTime;
-            PlayerPrefs.SetFloat("BestTime_" + currentLevelName, bestTime);
-            PlayerPrefs.Save();
-            Debug.Log("New Best Time: " + bestTime);
-        }
-        
-        // Level clear UI here V
     }
 }

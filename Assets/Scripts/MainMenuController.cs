@@ -51,10 +51,13 @@ public class MainMenuController : MonoBehaviour
     // ==========================================
     public void PlayGame()
     {
+        GameManager.sessionTime = 0f;
+        GameManager.isSessionTimerActive = true;
+
         if (SceneFader.Instance != null)
-            SceneFader.Instance.FadeToScene("SampleScene"); // Insert First stage here
+            SceneFader.Instance.FadeToScene("SampleScene"); 
         else
-            SceneManager.LoadScene("SampleScene");
+            SceneManager.LoadScene("SampleScene"); 
     }
 
     public void OpenOptions() { SwitchPanel(optionsPanel); }
