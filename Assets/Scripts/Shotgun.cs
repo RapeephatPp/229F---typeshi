@@ -106,7 +106,11 @@ public class Shotgun : MonoBehaviour
             else
             {
                 // กระสุนหมดเกลี้ยง! เล่นเสียงแกร๊ก
-                if (emptyGunSound != null) audioSource.PlayOneShot(emptyGunSound);
+                if (emptyGunSound != null) 
+                {
+                    audioSource.clip = emptyGunSound;
+                    audioSource.Play();
+                }
                 Debug.Log("Out of Ammo!");
             }
         }
@@ -158,7 +162,11 @@ public class Shotgun : MonoBehaviour
         nextFireTime = Time.time + fireRate; 
 
         // เล่นเสียงยิงปืน
-        if (shootSound != null) audioSource.PlayOneShot(shootSound); 
+        if (shootSound != null) 
+        {
+            audioSource.clip = shootSound;
+            audioSource.Play();
+        } 
 
         float randomRot = Random.Range(-recoilRotation, recoilRotation);
         float randomX = Random.Range(-30f, 30f); 
@@ -205,7 +213,11 @@ public class Shotgun : MonoBehaviour
         isReloading = true;
 
         // เล่นเสียงรีโหลด (อาจจะดึงความยาวของ Animation ให้ตรงกับเสียงได้)
-        if (reloadSound != null) audioSource.PlayOneShot(reloadSound);
+        if (reloadSound != null) 
+        {
+            audioSource.clip = reloadSound;
+            audioSource.Play();
+        }
 
         // คำนวณจำนวนกระสุนที่ต้องหยิบมาจากกระเป๋า
         int ammoNeeded = magSize - currentAmmo;
