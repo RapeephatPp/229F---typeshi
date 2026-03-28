@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 3426190153957329694}
   - component: {fileID: 5628448624128276880}
   m_Layer: 0
-  m_Name: AI
+  m_Name: "AI\u0E44\u0E21\u0E48\u0E43\u0E0A\u0E49"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
