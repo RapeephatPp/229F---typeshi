@@ -1740,7 +1740,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5946883744688129604, guid: 4bafc8032f918d547809e8936f44364f, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3185,8 +3185,9 @@ MonoBehaviour:
   m_text: "Group Name\n        Larbyaso\n  Rapeephat Pratuangthip 1670704269 - Player
     System , Level 1 , Game Manager , UI , Pixel Sprites \n  Thanathat Preeda  1670702669
     - Enemy System , Level 2 , Sound System\n  Supasuda Sriwannawat 1670705852 -
-    Obstacle System , Level 3 , Object System\n\nAssets\n-Grid Master From Decimate
-    \n- Sound From https://pixabay.com/sound-effects/\n\n\n\n\n"
+    Obstacle System , Level 3 , Object System\n\nAssets\n- Grid Master From Decimate
+    \n- Sound From https://pixabay.com/sound-effects/\n-  Retro FPS weapon Pack \nFrom
+    https://imed-55.itch.io/retro-fps-weapon-pack \n\n\n\n\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: e73a58f6e2794ae7b1b7e50b7fb811b0, type: 2}
@@ -3213,8 +3214,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 59.4
-  m_fontSizeBase: 59.4
+  m_fontSize: 55
+  m_fontSizeBase: 55
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -4752,7 +4753,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1598174731
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5954,7 +5955,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1936817715
 RectTransform:
   m_ObjectHideFlags: 0
