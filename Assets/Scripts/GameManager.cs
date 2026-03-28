@@ -11,6 +11,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private GameObject pausePanel;
     [SerializeField] private GameObject gameOverPanel;
     [SerializeField] private GameObject optionsPanel;
+    [SerializeField] private GameObject gameClearPanel;
+    
+    [Header("Game Clear UI")]
+    [SerializeField] private TextMeshProUGUI clearTimeText;
+    [SerializeField] private TextMeshProUGUI clearBestTimeText;
 
     [Header("Level Information")]
     [HideInInspector] public string currentLevelName;
@@ -56,7 +61,6 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        // ต่อ OnValueChanged เข้ากับ ApplySettings เพื่อให้อัปเดตทันทีที่เลื่อน Slider
         if (masterVolSlider != null) masterVolSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
         if (musicVolSlider != null) musicVolSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
         if (vfxVolSlider != null) vfxVolSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
@@ -68,16 +72,12 @@ public class GameManager : MonoBehaviour
         LoadSettingsUI(); 
 
         currentLevelName = SceneManager.GetActiveScene().name;
-        // ดึงสถิติเวลา Best Time (เซฟแยกตามชื่อด่าน)
         bestTime = PlayerPrefs.GetFloat("BestTime_" + currentLevelName, 0f); 
         
-        // สังเกตว่าเรา "เอาบรรทัด sessionTime = 0 ออกไปแล้ว"
-        // เพื่อให้เวลาโหลดด่านใหม่ / Restart ตัวเลขเวลายังเดินต่อจากของเดิม
     }
 
     private void Update()
     {
-        // นับเวลาไปเรื่อยๆ ตราบใดที่ยังจับเวลาอยู่ และไม่ได้ Pause หรือตาย
         if (isSessionTimerActive && !isPaused && !isGameOver)
         {
             sessionTime += Time.deltaTime; 
@@ -96,16 +96,9 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-
-    // ==============================
-    // LEVEL COMPLETION (จบด่าน)
-    // ==============================
+    
     public void LevelComplete()
     {
-        // สามารถปล่อยให้เวลาเดินต่อได้ถ้านี่ไม่ใช่ด่านสุดท้าย (คอมเมนต์บรรทัดล่างออก)
-        // isSessionTimerActive = false; 
-
-        // เช็คว่าทำลายสถิติไหม (Split Time)
         if (bestTime == 0f || sessionTime < bestTime)
         {
             bestTime = sessionTime;
@@ -200,13 +193,11 @@ public class GameManager : MonoBehaviour
         
         AudioListener.volume = masterVolSlider.value;
         
-        // ผูกความดังของ Background Music เข้ากับตัวเลื่อน Music
         if (bgmSource != null)
         {
             bgmSource.volume = musicVolSlider.value;
         }
-
-        // อัปเดตความดังของศัตรูทั้งหมดที่มีในฉากให้เท่ากับ VFXVol
+        
         EnemyAI[] enemies = FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
         foreach (EnemyAI enemy in enemies)
         {
@@ -228,7 +219,6 @@ public class GameManager : MonoBehaviour
         headBobToggle.isOn = PlayerPrefs.GetInt("HeadBob", 1) == 1;
         screenShakeToggle.isOn = PlayerPrefs.GetInt("ScreenShake", 1) == 1;
         
-        // ดึงความดังมาเซ็ตให้ BGM ตอนเปิดเกมครั้งแรกด้วย
         if (bgmSource != null)
         {
             bgmSource.volume = musicVolSlider.value;
@@ -260,4 +250,55 @@ public class GameManager : MonoBehaviour
         if (fovText != null) fovText.text = Mathf.RoundToInt(fovSlider.value).ToString();
         if (sensText != null) sensText.text = Mathf.RoundToInt(sensSlider.value).ToString();
     }
+    
+    // ==============================
+    // GAME CLEAR (จบเกมสมบูรณ์)
+    // ==============================
+    public void GameClear()
+    {
+        isSessionTimerActive = false; // หยุดเวลา Speedrun
+
+        // คำนวณหา Best Time ของ "ทั้งเกม" (เซฟแยกจากแบบรายด่าน)
+        float fullGameBest = PlayerPrefs.GetFloat("FullGameBestTime", 0f);
+        if (fullGameBest == 0f || sessionTime < fullGameBest)
+        {
+            fullGameBest = sessionTime;
+            PlayerPrefs.SetFloat("FullGameBestTime", fullGameBest);
+            PlayerPrefs.Save();
+        }
+
+        // แสดงผลตัวเลขลงบน UI
+        if (clearTimeText != null) clearTimeText.text = "YOUR TIME: " + FormatTime(sessionTime);
+        if (clearBestTimeText != null) clearBestTimeText.text = "BEST TIME: " + FormatTime(fullGameBest);
+
+        // เปิดหน้าต่างจบเกม และหยุดเวลา
+        gameClearPanel.SetActive(true);
+        Time.timeScale = 0f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    public void ReturnToMainMenuCredits()
+    {
+        Time.timeScale = 1f;
+        
+        // เซฟ "ธง" ไว้บอกหน้า Main Menu ให้เปิดหน้า Credits ทันที
+        PlayerPrefs.SetInt("ShowCreditsOnLoad", 1);
+        PlayerPrefs.Save();
+
+        if (SceneFader.Instance != null)
+            SceneFader.Instance.FadeToScene("MainMenu");
+        else
+            SceneManager.LoadScene("MainMenu");
+    }
+
+    // ฟังก์ชันช่วยจัดรูปแบบเวลา 00:00.00
+    private string FormatTime(float timeInSeconds)
+    {
+        int minutes = Mathf.FloorToInt(timeInSeconds / 60f);
+        int seconds = Mathf.FloorToInt(timeInSeconds % 60f);
+        int milliseconds = Mathf.FloorToInt((timeInSeconds * 100f) % 100f);
+        return string.Format("{0:00}:{1:00}.{2:00}", minutes, seconds, milliseconds);
+    }
+    
 }

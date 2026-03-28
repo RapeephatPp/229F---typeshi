@@ -46,12 +46,25 @@ public class MainMenuController : MonoBehaviour
 
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        
+        if (PlayerPrefs.GetInt("ShowCreditsOnLoad", 0) == 1)
+        {
+            PlayerPrefs.SetInt("ShowCreditsOnLoad", 0);
+            PlayerPrefs.Save();
 
-        currentPanel = mainMenuPanel;
-        ShowPanelImmediate(mainMenuPanel);
-        HidePanelImmediate(optionsPanel);
-        HidePanelImmediate(creditsPanel);
-
+            currentPanel = creditsPanel;
+            ShowPanelImmediate(creditsPanel);
+            HidePanelImmediate(mainMenuPanel);
+            HidePanelImmediate(optionsPanel);
+        }
+        
+        else
+        {
+            currentPanel = mainMenuPanel;
+            ShowPanelImmediate(mainMenuPanel);
+            HidePanelImmediate(optionsPanel);
+            HidePanelImmediate(creditsPanel);
+        }
         LoadSettings();
     }
 

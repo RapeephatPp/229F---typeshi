@@ -924,10 +924,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5744237539828808040, guid: b8f5b8ef5c4a4774ea0277c857cd0768, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2143039800525537184, guid: b8f5b8ef5c4a4774ea0277c857cd0768, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1024445697}
   m_SourcePrefab: {fileID: 100100000, guid: b8f5b8ef5c4a4774ea0277c857cd0768, type: 3}
 --- !u!4 &36216737 stripped
 Transform:
@@ -11803,7 +11807,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4929944382338469949, guid: 88db9dd7d91aceb46bb02a0bd3ba8d1b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 88db9dd7d91aceb46bb02a0bd3ba8d1b, type: 3}
 --- !u!1 &536154418 stripped
 GameObject:
@@ -20322,6 +20329,23 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6102481715718307537, guid: 8087b243e5bd38046a040106651302f2, type: 3}
   m_PrefabInstance: {fileID: 1024262837}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1024445696 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2143039800525537184, guid: b8f5b8ef5c4a4774ea0277c857cd0768, type: 3}
+  m_PrefabInstance: {fileID: 34804591}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1024445697
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024445696}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e149b28b34884e142a76854d6020d535, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameEndTrigger
 --- !u!1001 &1024807860
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32877,7 +32901,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4929944382338469949, guid: 88db9dd7d91aceb46bb02a0bd3ba8d1b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 88db9dd7d91aceb46bb02a0bd3ba8d1b, type: 3}
 --- !u!1001 &1646188811
 PrefabInstance:
