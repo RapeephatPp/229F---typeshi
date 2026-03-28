@@ -196,6 +196,10 @@ public class GameManager : MonoBehaviour
         if (playerMovement != null)
         {
             playerMovement.ApplySettingsFromSave();
+            
+            // ให้ปืนอัปเดตความดังด้วยเผื่อผู้เล่นปรับสไลเดอร์
+            Shotgun shotgun = playerMovement.GetComponentInChildren<Shotgun>();
+            if (shotgun != null) shotgun.ApplySettingsFromSave();
         }
         
         AudioListener.volume = masterVolSlider.value;

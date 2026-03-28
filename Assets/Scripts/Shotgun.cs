@@ -21,6 +21,8 @@ public class Shotgun : MonoBehaviour
     [SerializeField] private GameObject bulletTracePrefab;
 
     [Header("Audio Settings")]
+    [Range(0f, 1f)] [Tooltip("ตัวคูณความดังเฉพาะของปืน (0 = ปิดเสียง, 1 = ดังสุด)")]
+    [SerializeField] private float gunVolumeScale = 1f;
     [SerializeField] private AudioClip shootSound;
     [SerializeField] private AudioClip reloadSound;
     [SerializeField] private AudioClip emptyGunSound;
@@ -84,7 +86,7 @@ public class Shotgun : MonoBehaviour
         // สังเคราะห์ AudioSource เข้ากับปืนเพื่อเล่นเสียงดึงจากค่า Slider VFXVol
         audioSource = gameObject.AddComponent<AudioSource>();
         audioSource.playOnAwake = false;
-        audioSource.volume = PlayerPrefs.GetFloat("VFXVol", 1f);
+        audioSource.volume = PlayerPrefs.GetFloat("VFXVol", 1f) * gunVolumeScale;
     }
 
     void Update()
@@ -299,6 +301,14 @@ public class Shotgun : MonoBehaviour
         if (totalAmmo > maxTotalAmmo) 
         {
             totalAmmo = maxTotalAmmo; // กันไม่ให้พกกระสุนเกินขีดจำกัด
+        }
+    }
+
+    public void ApplySettingsFromSave()
+    {
+        if (audioSource != null)
+        {
+            audioSource.volume = PlayerPrefs.GetFloat("VFXVol", 1f) * gunVolumeScale;
         }
     }
 
