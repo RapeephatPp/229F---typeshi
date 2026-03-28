@@ -35,6 +35,15 @@ public class MainMenuController : MonoBehaviour
 
     void Start()
     {
+        // ต่อ OnValueChanged เข้ากับ ApplySettings เพื่อให้อัปเดตทันทีที่เลื่อน Slider
+        if (masterVolSlider != null) masterVolSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (musicVolSlider != null) musicVolSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (vfxVolSlider != null) vfxVolSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (fovSlider != null) fovSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (sensSlider != null) sensSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (headBobToggle != null) headBobToggle.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (screenShakeToggle != null) screenShakeToggle.onValueChanged.AddListener(delegate { ApplySettings(); });
+
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
@@ -105,6 +114,8 @@ public class MainMenuController : MonoBehaviour
 
         headBobToggle.isOn = PlayerPrefs.GetInt("HeadBob", 1) == 1;
         screenShakeToggle.isOn = PlayerPrefs.GetInt("ScreenShake", 1) == 1;
+
+        AudioListener.volume = masterVolSlider.value;
 
         UpdateValueTexts(); // อัปเดตตัวเลขตอนเปิดหน้าต่างครั้งแรก
     }

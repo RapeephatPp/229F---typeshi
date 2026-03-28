@@ -65,6 +65,9 @@ public class EnemyAI : MonoBehaviour
             monsterAudioSource.maxDistance = audioMaxDistance;
             monsterAudioSource.rolloffMode = AudioRolloffMode.Linear;
             
+            // ใช้ความดังจาก Setting หมวด VFX
+            monsterAudioSource.volume = PlayerPrefs.GetFloat("VFXVol", 1f);
+            
             // ถ้าเสียงยังไม่เล่น ให้เริ่มเล่นเลยแบบวนลูป
             monsterAudioSource.loop = true;
             if (!monsterAudioSource.isPlaying)

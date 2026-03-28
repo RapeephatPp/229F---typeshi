@@ -20,6 +20,12 @@ public class Shotgun : MonoBehaviour
     [Header("Effects")]
     [SerializeField] private GameObject bulletTracePrefab;
 
+    [Header("Audio Settings")]
+    [SerializeField] private AudioClip shootSound;
+    [SerializeField] private AudioClip reloadSound;
+    [SerializeField] private AudioClip emptyGunSound;
+    private AudioSource audioSource;
+
     [Header("Mobility & External Recoil")]
     [SerializeField] private float playerRecoilForce = 15f; 
 
@@ -74,6 +80,11 @@ public class Shotgun : MonoBehaviour
         if (playerCamera == null) playerCamera = Camera.main;
         if (playerMovement == null) playerMovement = GetComponentInParent<PlayerMovement>();
         if (gunImage != null && idleSprite != null) gunImage.sprite = idleSprite;
+
+        // สังเคราะห์ AudioSource เข้ากับปืนเพื่อเล่นเสียงดึงจากค่า Slider VFXVol
+        audioSource = gameObject.AddComponent<AudioSource>();
+        audioSource.playOnAwake = false;
+        audioSource.volume = PlayerPrefs.GetFloat("VFXVol", 1f);
     }
 
     void Update()
@@ -94,7 +105,8 @@ public class Shotgun : MonoBehaviour
             }
             else
             {
-                // กระสุนหมดเกลี้ยงทุกอย่าง! (สามารถใส่เสียงปืนแกร๊กๆ ตรงนี้ได้)
+                // กระสุนหมดเกลี้ยง! เล่นเสียงแกร๊ก
+                if (emptyGunSound != null) audioSource.PlayOneShot(emptyGunSound);
                 Debug.Log("Out of Ammo!");
             }
         }
@@ -145,6 +157,9 @@ public class Shotgun : MonoBehaviour
         currentAmmo--; // หักกระสุนในปืน 1 นัด
         nextFireTime = Time.time + fireRate; 
 
+        // เล่นเสียงยิงปืน
+        if (shootSound != null) audioSource.PlayOneShot(shootSound); 
+
         float randomRot = Random.Range(-recoilRotation, recoilRotation);
         float randomX = Random.Range(-30f, 30f); 
         
@@ -188,6 +203,9 @@ public class Shotgun : MonoBehaviour
     private IEnumerator ReloadSequence()
     {
         isReloading = true;
+
+        // เล่นเสียงรีโหลด (อาจจะดึงความยาวของ Animation ให้ตรงกับเสียงได้)
+        if (reloadSound != null) audioSource.PlayOneShot(reloadSound);
 
         // คำนวณจำนวนกระสุนที่ต้องหยิบมาจากกระเป๋า
         int ammoNeeded = magSize - currentAmmo;

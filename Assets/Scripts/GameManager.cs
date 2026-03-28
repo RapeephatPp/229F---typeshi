@@ -56,6 +56,15 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
+        // ต่อ OnValueChanged เข้ากับ ApplySettings เพื่อให้อัปเดตทันทีที่เลื่อน Slider
+        if (masterVolSlider != null) masterVolSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (musicVolSlider != null) musicVolSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (vfxVolSlider != null) vfxVolSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (fovSlider != null) fovSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (sensSlider != null) sensSlider.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (headBobToggle != null) headBobToggle.onValueChanged.AddListener(delegate { ApplySettings(); });
+        if (screenShakeToggle != null) screenShakeToggle.onValueChanged.AddListener(delegate { ApplySettings(); });
+
         LoadSettingsUI(); 
 
         currentLevelName = SceneManager.GetActiveScene().name;
@@ -196,6 +205,16 @@ public class GameManager : MonoBehaviour
         {
             bgmSource.volume = musicVolSlider.value;
         }
+
+        // อัปเดตความดังของศัตรูทั้งหมดที่มีในฉากให้เท่ากับ VFXVol
+        EnemyAI[] enemies = FindObjectsByType<EnemyAI>(FindObjectsSortMode.None);
+        foreach (EnemyAI enemy in enemies)
+        {
+            if (enemy.monsterAudioSource != null)
+            {
+                enemy.monsterAudioSource.volume = vfxVolSlider.value;
+            }
+        }
     }
 
     private void LoadSettingsUI()
@@ -214,6 +233,8 @@ public class GameManager : MonoBehaviour
         {
             bgmSource.volume = musicVolSlider.value;
         }
+
+        AudioListener.volume = masterVolSlider.value;
 
         UpdateValueTexts();
     }

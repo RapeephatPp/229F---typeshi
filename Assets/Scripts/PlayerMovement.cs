@@ -73,6 +73,17 @@ public class PlayerMovement : MonoBehaviour
     [Header("Camera & Input")]
     [SerializeField] private float mouseSensitivity = 100f;
 
+    [Header("Audio Settings")]
+    [Tooltip("ใส่เสียงเดินแบบลากยาว (Loop)")]
+    [SerializeField] private AudioClip walkLoopSound;
+    [Tooltip("ใส่เสียงวิ่งแบบลากยาว (Loop) (ถ้าไม่มี ใช้เสียงเดินแทนได้)")]
+    [SerializeField] private AudioClip runLoopSound;
+    [SerializeField] private AudioClip jumpSound;
+    [SerializeField] private AudioClip landSound;
+    
+    private AudioSource footstepSource;
+    private AudioSource effectSource;
+
     [Header("Ground Check")] 
     [SerializeField] private Transform groundCheck;
     [SerializeField] private float groundDistance = 0.4f;
@@ -138,6 +149,15 @@ public class PlayerMovement : MonoBehaviour
         currentSpeed = walkSpeed;
         cameraBaseLocalPos = playerCamera.transform.localPosition;
 
+        footstepSource = gameObject.AddComponent<AudioSource>();
+        footstepSource.playOnAwake = false;
+        footstepSource.loop = true; // ตั้งให้วนลูปอัตโนมัติ
+        footstepSource.volume = PlayerPrefs.GetFloat("VFXVol", 1f);
+
+        effectSource = gameObject.AddComponent<AudioSource>();
+        effectSource.playOnAwake = false;
+        effectSource.volume = PlayerPrefs.GetFloat("VFXVol", 1f);
+
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
         
@@ -179,6 +199,7 @@ public class PlayerMovement : MonoBehaviour
         HandleGameFeel();
         ApplyGravity();
         HandleSpeedLines();
+        HandleFootsteps();
     }
 
     void HandleGroundCheck()
@@ -188,6 +209,12 @@ public class PlayerMovement : MonoBehaviour
 
         if (isGrounded && !wasGrounded)
         {
+            if (landSound != null) 
+            {
+                effectSource.clip = landSound;
+                effectSource.Play();
+            }
+            
             if (velocity.y < -5f) 
             {
                 currentDipY = -landDipAmount; 
@@ -387,6 +414,14 @@ public class PlayerMovement : MonoBehaviour
 
             if (isWallSliding || isWallRunning)
             {
+                if (jumpSound != null) 
+                {
+                    effectSource.clip = jumpSound;
+                    effectSource.Play();
+                }
+                // ตัดเสียงเท้าทันทีที่กระโดด
+                if (footstepSource.isPlaying) footstepSource.Stop(); 
+
                 velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
                 
                 // [THE FIX] - Multiply the wall normal by 1.5 to guarantee a strong push AWAY from the wall
@@ -406,6 +441,14 @@ public class PlayerMovement : MonoBehaviour
 
             if (jumpsRemaining > 0)
             {
+                if (jumpSound != null) 
+                {
+                    effectSource.clip = jumpSound;
+                    effectSource.Play();
+                }
+                // ตัดเสียงเท้าทันทีที่กระโดด
+                if (footstepSource.isPlaying) footstepSource.Stop(); 
+
                 if (isSliding) currentSpeed += 3f; 
                 velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
                 jumpsRemaining--;
@@ -463,6 +506,11 @@ public class PlayerMovement : MonoBehaviour
         controller.enabled = true;
         isClimbing = false;
 
+        if (jumpSound != null) 
+        {
+            effectSource.clip = jumpSound;
+            effectSource.Play();
+        }
         velocity.y = Mathf.Sqrt(ledgeVaultBoost * -2f * gravity);
         currentSpeed = runSpeed; 
         moveDirection = transform.forward;
@@ -590,6 +638,36 @@ public class PlayerMovement : MonoBehaviour
         var emission = speedLinesParticle.emission;
         emission.rateOverTime = currentParticleEmission;
     }
+
+    void HandleFootsteps()
+    {
+        // เช็คว่าอยู่บนพื้น และกำลังขยับอยู่
+        if (!isGrounded || currentSpeed < 0.5f || moveDirection.magnitude < 0.1f || isSliding || isDashing || isWallRunning || isWallSliding) 
+        {
+            // หยุดเดิน/กระโดดลอยอยู่/สไลด์ -> สั่งปิดเสียงเท้าทันที
+            if (footstepSource.isPlaying)
+            {
+                footstepSource.Stop();
+            }
+            return;
+        }
+        
+        // ถ้ากำลังเดิน ให้เล่นเสียง
+        AudioClip clipToPlay = (currentSpeed > walkSpeed + 0.5f && runLoopSound != null) ? runLoopSound : walkLoopSound;
+        
+        if (clipToPlay != null)
+        {
+            if (footstepSource.clip != clipToPlay)
+            {
+                footstepSource.clip = clipToPlay;
+                footstepSource.Play();
+            }
+            else if (!footstepSource.isPlaying)
+            {
+                footstepSource.Play();
+            }
+        }
+    }
     
     public float GetCurrentSpeed() 
     {
@@ -636,6 +714,9 @@ public class PlayerMovement : MonoBehaviour
         mouseSensitivity = PlayerPrefs.GetFloat("Sensitivity", 100f);
         normalFOV = PlayerPrefs.GetFloat("FOV", 60f);
         if(playerCamera != null) playerCamera.fieldOfView = normalFOV;
+        
+        if (footstepSource != null) footstepSource.volume = PlayerPrefs.GetFloat("VFXVol", 1f);
+        if (effectSource != null) effectSource.volume = PlayerPrefs.GetFloat("VFXVol", 1f);
 
         // 2. จัดการ Head Bob และ Screen Shake
         bool enableBob = PlayerPrefs.GetInt("HeadBob", 1) == 1;
