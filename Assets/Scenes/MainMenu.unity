@@ -3227,14 +3227,14 @@ RectTransform:
   m_GameObject: {fileID: 984541131}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: 1.0641, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1598174731}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -712, y: 453}
+  m_AnchoredPosition: {x: -702, y: -88}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &984541133
@@ -3257,10 +3257,15 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Kedit '
+  m_text: "Group Name\n        Larbyaso\n  Rapeephat Pratuangthip 1670704269 - Player
+    System , Level 1 , Game Manager , UI , Pixel Sprites \n  Thanathat Preeda  1670702669
+    - Enemy System , Level 2 , Sound System\n  Supasuda Sriwannawat 1670705852 -
+    Obstacle System , Level 3 , Object System\n\nAssets\n- Grid Master From Decimate
+    \n- Sound From https://pixabay.com/sound-effects/\n-  Retro FPS weapon Pack \nFrom
+    https://imed-55.itch.io/retro-fps-weapon-pack \n\n\n\n\n"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_sharedMaterial: {fileID: 2100000, guid: e73a58f6e2794ae7b1b7e50b7fb811b0, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -3284,8 +3289,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 97.31
-  m_fontSizeBase: 97.31
+  m_fontSize: 55
+  m_fontSizeBase: 55
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
