@@ -19,6 +19,11 @@ public class EnemyAI : MonoBehaviour
     public float attackRange = 2f;
     public float attackCooldown = 1.5f;
     
+    [Header("Audio Settings")]
+    [Tooltip("ใส่ AudioSource สำหรับเสียงมอนสเตอร์เวลาวิ่งไล่ล่า")]
+    public AudioSource monsterAudioSource;
+    [Tooltip("ระยะไกลสุดที่จะได้ยินเสียงมอนสเตอร์")]
+    public float audioMaxDistance = 25f;
 
 
     private NavMeshAgent agent;
@@ -51,6 +56,21 @@ public class EnemyAI : MonoBehaviour
         if (player != null)
         {
             playerHealth = player.GetComponent<PlayerHealth>();
+        }
+
+        // ตั้งค่าเสียงให้เป็น 3D อัตโนมัติ (เสียงจะดังขึ้นเวลาศัตรูเข้าใกล้)
+        if (monsterAudioSource != null)
+        {
+            monsterAudioSource.spatialBlend = 1f; // เป็น 3D 100%
+            monsterAudioSource.maxDistance = audioMaxDistance;
+            monsterAudioSource.rolloffMode = AudioRolloffMode.Linear;
+            
+            // ถ้าเสียงยังไม่เล่น ให้เริ่มเล่นเลยแบบวนลูป
+            monsterAudioSource.loop = true;
+            if (!monsterAudioSource.isPlaying)
+            {
+                monsterAudioSource.Play();
+            }
         }
     }
 

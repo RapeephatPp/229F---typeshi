@@ -38,6 +38,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI fovText;
     [SerializeField] private TextMeshProUGUI sensText;
 
+    [Header("Audio Settings")]
+    [Tooltip("ใส่ AudioSource ที่ใช้เล่นเพลงแบคกราวน์ของเกม")]
+    public AudioSource bgmSource;
+
     [Header("References")]
     [SerializeField] private PlayerMovement playerMovement;
 
@@ -184,7 +188,14 @@ public class GameManager : MonoBehaviour
         {
             playerMovement.ApplySettingsFromSave();
         }
+        
         AudioListener.volume = masterVolSlider.value;
+        
+        // ผูกความดังของ Background Music เข้ากับตัวเลื่อน Music
+        if (bgmSource != null)
+        {
+            bgmSource.volume = musicVolSlider.value;
+        }
     }
 
     private void LoadSettingsUI()
@@ -198,6 +209,12 @@ public class GameManager : MonoBehaviour
         headBobToggle.isOn = PlayerPrefs.GetInt("HeadBob", 1) == 1;
         screenShakeToggle.isOn = PlayerPrefs.GetInt("ScreenShake", 1) == 1;
         
+        // ดึงความดังมาเซ็ตให้ BGM ตอนเปิดเกมครั้งแรกด้วย
+        if (bgmSource != null)
+        {
+            bgmSource.volume = musicVolSlider.value;
+        }
+
         UpdateValueTexts();
     }
 
